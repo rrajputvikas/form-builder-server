@@ -84,25 +84,35 @@ app.post("/update/:id", upload.single('image'), async (req, res) => {
 });
 
 // Upload Form
-  app.post("/save-form/:id", async (req, res) => {
-  
-    try {
-      const id = req.params.id;
+app.post("/save-form/:id", upload.array('images', 10), async (req, res) => {
+  try {
+    const id = req.params.id;
 
-      const form = await Form.findById(id);
-      if (!form) {
-        return res.status(404).json({ error: 'Document not found' });
+    const form = await Form.findById(id);
+    if (!form) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    const uploadedImages = req.files;
+
+    
+    const questions = JSON.parse(req.body.questions);
+    
+    questions.forEach((question, index) => {
+      if(uploadedImages[index]) {
+        question.questionStructure.questionImage = uploadedImages[index].filename;
       }
-      form.questions = req.body;
-      console.log(form)
-      await form.save();
-      
-      res.json({ message: 'Data Saved successfully' });
-    } catch(error) {
-      console.error(error);
-      res.status(500).json({ success: false, message: "An error occurred" });
+    });
+
+    form.questions = questions;
+
+    await form.save();
+
+    res.json({ message: 'Data Saved successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "An error occurred" });
   }
-})
+});
 
 // Receive Header
 app.get("/forms/:id", async (req, res) => {
